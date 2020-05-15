@@ -1,7 +1,6 @@
 package tfe
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -55,7 +54,6 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 				"Error creating team %s for organization %s: %v", name, organization, err)
 		}
 
-		d.Set("organization", organization)
 		teamID, err := detectTeamID(tfeClient, name, organization)
 		if err != nil {
 			return fmt.Errorf(
@@ -122,7 +120,6 @@ func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schem
 
 func detectTeamID(client *tfe.Client, team, organization string) (string, error) {
 	var teamID string
-	ctx = context.Background()
 
 	page := 0
 	for {

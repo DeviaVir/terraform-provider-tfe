@@ -1,7 +1,6 @@
 package tfe
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -378,7 +377,6 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 
 func detectWorkspaceID(client *tfe.Client, name, organization string) (string, error) {
 	var workspaceID string
-	ctx = context.Background()
 
 	page := 0
 	for {

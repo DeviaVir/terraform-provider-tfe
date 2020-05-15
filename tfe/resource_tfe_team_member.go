@@ -49,7 +49,9 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Add user %q to team: %s", username, teamID)
 	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
-		return fmt.Errorf("Error adding user %q to team %s: %v", username, teamID, err)
+		if !strings.Contains(err.Error(), "already a member") {
+			return fmt.Errorf("Error adding user %q to team %s: %v", username, teamID, err)
+		}
 	}
 
 	d.SetId(packTeamMemberID(teamID, username))
