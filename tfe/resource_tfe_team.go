@@ -49,8 +49,10 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
 	team, err := tfeClient.Teams.Create(ctx, organization, options)
 	if err != nil {
-		return fmt.Errorf(
-			"Error creating team %s for organization %s: %v", name, organization, err)
+		if !strings.Contains(err.Error(), "has already been taken") {
+			return fmt.Errorf(
+				"Error creating team %s for organization %s: %v", name, organization, err)
+		}
 	}
 
 	d.SetId(team.ID)

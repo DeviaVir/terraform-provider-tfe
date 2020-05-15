@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -176,8 +177,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
 	workspace, err := tfeClient.Workspaces.Create(ctx, organization, options)
 	if err != nil {
-		return fmt.Errorf(
-			"Error creating workspace %s for organization %s: %v", name, organization, err)
+		if !strings.Contains(err.Error(), "has already been taken") {
+			return fmt.Errorf(
+				"Error creating workspace %s for organization %s: %v", name, organization, err)
+		}
 	}
 
 	d.SetId(workspace.ID)

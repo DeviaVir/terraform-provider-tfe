@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -118,7 +119,9 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 	log.Printf("[DEBUG] Create notification configuration: %s", name)
 	notificationConfiguration, err := tfeClient.NotificationConfigurations.Create(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating notification configuration %s: %v", name, err)
+		if !strings.Contains(err.Error(), "has already been taken") {
+			return fmt.Errorf("Error creating notification configuration %s: %v", name, err)
+		}
 	}
 
 	d.SetId(notificationConfiguration.ID)

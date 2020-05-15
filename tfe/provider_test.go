@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/DeviaVir/terraform-provider-tfe/version"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/hashicorp/terraform-svchost/disco"
-	"github.com/terraform-providers/terraform-provider-tfe/version"
 )
 
 var testAccProviders map[string]terraform.ResourceProvider

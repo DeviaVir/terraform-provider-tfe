@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	providerVersion "github.com/DeviaVir/terraform-provider-tfe/version"
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
@@ -19,7 +20,6 @@ import (
 	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/auth"
 	"github.com/hashicorp/terraform-svchost/disco"
-	providerVersion "github.com/terraform-providers/terraform-provider-tfe/version"
 )
 
 const defaultHostname = "app.terraform.io"

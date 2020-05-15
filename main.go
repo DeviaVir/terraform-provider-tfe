@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/DeviaVir/terraform-provider-tfe/tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/plugin"
-	"github.com/terraform-providers/terraform-provider-tfe/tfe"
 )
 
 func main() {

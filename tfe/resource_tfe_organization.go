@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -76,7 +77,9 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 	log.Printf("[DEBUG] Create new organization: %s", name)
 	org, err := tfeClient.Organizations.Create(ctx, options)
 	if err != nil {
-		return fmt.Errorf("Error creating the new organization %s: %v", name, err)
+		if !strings.Contains(err.Error(), "has already been taken") {
+			return fmt.Errorf("Error creating the new organization %s: %v", name, err)
+		}
 	}
 
 	d.SetId(org.Name)
