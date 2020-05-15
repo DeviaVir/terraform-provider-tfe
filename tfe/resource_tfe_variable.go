@@ -114,10 +114,19 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
 	variable, err := tfeClient.Variables.Create(ctx, ws.ID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
-	}
+		if !strings.Contains(err.Error(), "has already been taken") {
+			return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
+		}
 
-	d.SetId(variable.ID)
+		variablesWsID, err := detectWorkspaceVariables(tfeClient, ws.ID, key)
+		if err != nil {
+			return fmt.Errorf(
+				"Error finding variables for %s: %v", ws.Name, err)
+		}
+		d.SetId(variablesWsID)
+	} else {
+		d.SetId(variable.ID)
+	}
 
 	return resourceTFEVariableRead(d, meta)
 }
@@ -232,4 +241,37 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func detectWorkspaceVariables(client *tfe.Client, ws, key string) (string, error) {
+	var variableWsID string
+
+	page := 0
+	for {
+		options := tfe.ListOptions{
+			PageNumber: page,
+			PageSize:   100,
+		}
+		teams, err := client.Variables.List(ctx, ws, tfe.VariableListOptions{options})
+		if err != nil {
+			return "", fmt.Errorf("failed to list variables: %s", err)
+		}
+
+		for _, t := range teams.Items {
+			if t.Key == key {
+				variableWsID = t.ID
+				break
+			}
+		}
+
+		if variableWsID != "" {
+			break
+		}
+	}
+
+	if variableWsID == "" {
+		return "", fmt.Errorf("failed to find variables %s", key)
+	}
+
+	return variableWsID, nil
 }

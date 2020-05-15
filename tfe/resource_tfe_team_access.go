@@ -94,11 +94,20 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Give team %s %s access to workspace: %s", tm.Name, access, ws.Name)
 	tmAccess, err := tfeClient.TeamAccess.Add(ctx, options)
 	if err != nil {
-		return fmt.Errorf(
-			"Error giving team %s %s access to workspace %s: %v", tm.Name, access, ws.Name, err)
-	}
+		if !strings.Contains(err.Error(), "has already been taken") {
+			return fmt.Errorf(
+				"Error giving team %s %s access to workspace %s: %v", tm.Name, access, ws.Name, err)
+		}
 
-	d.SetId(tmAccess.ID)
+		teamAccessID, err := detectTeamAccessID(tfeClient, tm.ID, ws.ID)
+		if err != nil {
+			return fmt.Errorf(
+				"Error finding team %s in %s: %v", tm.Name, ws.Name, err)
+		}
+		d.SetId(teamAccessID)
+	} else {
+		d.SetId(tmAccess.ID)
+	}
 
 	return resourceTFETeamAccessRead(d, meta)
 }
@@ -165,4 +174,37 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func detectTeamAccessID(client *tfe.Client, team, workspace string) (string, error) {
+	var teamAccessID string
+
+	page := 0
+	for {
+		options := tfe.ListOptions{
+			PageNumber: page,
+			PageSize:   100,
+		}
+		teams, err := client.TeamAccess.List(ctx, tfe.TeamAccessListOptions{options, &workspace})
+		if err != nil {
+			return "", fmt.Errorf("failed to list teams: %s", err)
+		}
+
+		for _, t := range teams.Items {
+			if t.Team.ID == team {
+				teamAccessID = t.ID
+				break
+			}
+		}
+
+		if teamAccessID != "" {
+			break
+		}
+	}
+
+	if teamAccessID == "" {
+		return "", fmt.Errorf("failed to find team %s", team)
+	}
+
+	return teamAccessID, nil
 }
