@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -181,9 +182,16 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf(
 				"Error creating workspace %s for organization %s: %v", name, organization, err)
 		}
-	}
 
-	d.SetId(workspace.ID)
+		workspaceID, err := detectWorkspaceID(tfeClient, name, organization)
+		if err != nil {
+			return fmt.Errorf(
+				"Error finding workspace %s for organization %s: %v", name, organization, err)
+		}
+		d.SetId(workspaceID)
+	} else {
+		d.SetId(workspace.ID)
+	}
 
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
 		_, err = tfeClient.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
@@ -366,4 +374,42 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
+}
+
+func detectWorkspaceID(client *tfe.Client, name, organization string) (string, error) {
+	var workspaceID string
+	ctx = context.Background()
+
+	page := 0
+	for {
+		options := tfe.ListOptions{
+			PageNumber: page,
+			PageSize:   100,
+		}
+		names, err := client.Workspaces.List(ctx, organization, tfe.WorkspaceListOptions{options, &name})
+		if err != nil {
+			return "", fmt.Errorf("failed to list names: %s", err)
+		}
+
+		for _, t := range names.Items {
+			if t.Name == name {
+				workspaceID = t.ID
+				break
+			}
+			if t.ID == name {
+				workspaceID = t.ID
+				break
+			}
+		}
+
+		if workspaceID != "" {
+			break
+		}
+	}
+
+	if workspaceID == "" {
+		return "", fmt.Errorf("failed to find name %s", name)
+	}
+
+	return workspaceID, nil
 }

@@ -3,7 +3,6 @@ package tfe
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -52,9 +51,7 @@ func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) erro
 	log.Printf("[DEBUG] Add users to team: %s", teamID)
 	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
-		if !strings.Contains(err.Error(), "has already been taken") {
-			return fmt.Errorf("Error adding users to team %s: %v", teamID, err)
-		}
+		return fmt.Errorf("Error adding users to team %s: %v", teamID, err)
 	}
 
 	d.SetId(teamID)

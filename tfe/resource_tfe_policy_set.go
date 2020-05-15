@@ -3,7 +3,6 @@ package tfe
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -149,12 +148,8 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
 	policySet, err := tfeClient.PolicySets.Create(ctx, organization, options)
 	if err != nil {
-		if err != nil {
-			if !strings.Contains(err.Error(), "has already been taken") {
-				return fmt.Errorf(
-					"Error creating policy set %s for organization %s: %v", name, organization, err)
-			}
-		}
+		return fmt.Errorf(
+			"Error creating policy set %s for organization %s: %v", name, organization, err)
 	}
 
 	d.SetId(policySet.ID)

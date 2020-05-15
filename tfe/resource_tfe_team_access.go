@@ -94,10 +94,8 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Give team %s %s access to workspace: %s", tm.Name, access, ws.Name)
 	tmAccess, err := tfeClient.TeamAccess.Add(ctx, options)
 	if err != nil {
-		if !strings.Contains(err.Error(), "has already been taken") {
-			return fmt.Errorf(
-				"Error giving team %s %s access to workspace %s: %v", tm.Name, access, ws.Name, err)
-		}
+		return fmt.Errorf(
+			"Error giving team %s %s access to workspace %s: %v", tm.Name, access, ws.Name, err)
 	}
 
 	d.SetId(tmAccess.ID)

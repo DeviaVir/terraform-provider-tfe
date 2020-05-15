@@ -80,9 +80,10 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 		if !strings.Contains(err.Error(), "has already been taken") {
 			return fmt.Errorf("Error creating the new organization %s: %v", name, err)
 		}
+		d.SetId(name)
+	} else {
+		d.SetId(org.Name)
 	}
-
-	d.SetId(org.Name)
 
 	return resourceTFEOrganizationUpdate(d, meta)
 }

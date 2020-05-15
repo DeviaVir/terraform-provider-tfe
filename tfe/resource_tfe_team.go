@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -53,9 +54,17 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf(
 				"Error creating team %s for organization %s: %v", name, organization, err)
 		}
-	}
 
-	d.SetId(team.ID)
+		d.Set("organization", organization)
+		teamID, err := detectTeamID(tfeClient, name, organization)
+		if err != nil {
+			return fmt.Errorf(
+				"Error finding team %s for organization %s: %v", name, organization, err)
+		}
+		d.SetId(teamID)
+	} else {
+		d.SetId(team.ID)
+	}
 
 	return resourceTFETeamRead(d, meta)
 }
@@ -99,7 +108,7 @@ func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schem
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
-			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID>)",
+			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM>)",
 			d.Id(),
 		)
 	}
@@ -109,4 +118,42 @@ func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schem
 	d.SetId(s[1])
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func detectTeamID(client *tfe.Client, team, organization string) (string, error) {
+	var teamID string
+	ctx = context.Background()
+
+	page := 0
+	for {
+		options := tfe.ListOptions{
+			PageNumber: page,
+			PageSize:   100,
+		}
+		teams, err := client.Teams.List(ctx, organization, tfe.TeamListOptions{options})
+		if err != nil {
+			return "", fmt.Errorf("failed to list teams: %s", err)
+		}
+
+		for _, t := range teams.Items {
+			if t.Name == team {
+				teamID = t.ID
+				break
+			}
+			if t.ID == team {
+				teamID = t.ID
+				break
+			}
+		}
+
+		if teamID != "" {
+			break
+		}
+	}
+
+	if teamID == "" {
+		return "", fmt.Errorf("failed to find team %s", team)
+	}
+
+	return teamID, nil
 }
